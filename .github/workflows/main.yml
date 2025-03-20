@@ -24,7 +24,7 @@ jobs:
 
       - name: Write GCP credentials file
         run: |
-          printf '%s' "${{ secrets.GCP_CREDENTIALS }}" | base64 --decode > gcs_credentials.json
+          printf '%s' "${{ secrets.GCP_CREDENTIALS }}" > gcs_credentials.json
 
       - name: Run processing script and upload file
         env:

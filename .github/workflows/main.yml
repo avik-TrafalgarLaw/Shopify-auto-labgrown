@@ -27,7 +27,5 @@ jobs:
           printf '%s' "${{ secrets.GCP_CREDENTIALS }}" > gcs_credentials.json
 
       - name: Run processing script and upload file
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcs_credentials.json
         run: |
           python main.py

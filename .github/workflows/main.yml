@@ -31,4 +31,4 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcs_credentials.json
         run: |
-          python your_script.py
+          python main.py

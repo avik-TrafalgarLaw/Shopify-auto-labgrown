@@ -15,7 +15,8 @@ ftp_server = "ftp.nivoda.net"
 ftp_user = "leeladiamondscorporate@gmail.com"
 ftp_password = "r[Eu;9NB"
 remote_file = "Leela Diamond_labgrown.csv"
-local_file = r"D:\CODING\SHOPIFY INVENTORY TEST\Labgrown.csv"  # Local save location
+# Use a relative path for the downloaded file:
+local_file = "Labgrown.csv"  
 
 try:
     with FTP(ftp_server) as ftp:
@@ -103,8 +104,7 @@ def clarity_matches(row_clarity, group_clarity):
 
 # --- Import & Normalize Raw Data ---
 
-raw_filename = local_file  # Use the file downloaded from FTP
-df = pd.read_csv(raw_filename, sep=',', low_memory=False,
+df = pd.read_csv(local_file, sep=',', low_memory=False,
                  dtype={'floCol': str, 'canadaMarkEligible': str})
 
 # Normalize column names (strip spaces and convert to lowercase)
@@ -187,8 +187,8 @@ for shape in allowed_shapes:
 final_df = pd.concat(final_selection).reset_index(drop=True)
 print(f"Balanced selection complete: {len(final_df)} diamonds selected.")
 
-# Add a stock id column (e.g., "NVL-0209-01")
-today_str = datetime.today().strftime("%m%d")
+# Add a stock id column (e.g., "NVL-YYYYMMDD-01")
+today_str = datetime.today().strftime("%Y%m%d")
 final_df['stock id'] = final_df.index + 1
 final_df['stock id'] = final_df['stock id'].apply(lambda x: f"NVL-{today_str}-{x:02d}")
 
@@ -207,8 +207,8 @@ final_df.rename(columns={
     'flo': 'Fluor'
 }, inplace=True)
 
-# Write the transformed diamonds file.
-selected_output_filename = r'D:\CODING\SHOPIFY INVENTORY TEST\transformed_diamonds.csv'
+# Write the transformed diamonds file using a relative path.
+selected_output_filename = "transformed_diamonds.csv"
 final_df.to_csv(selected_output_filename, index=False)
 print(f"Selected diamonds file written with {len(final_df)} diamonds at {selected_output_filename}.")
 
@@ -339,7 +339,8 @@ shopify_df = pd.DataFrame({
     "Included / United States": "TRUE"
 })
 
-shopify_output_filename = r'D:\CODING\SHOPIFY INVENTORY TEST\shopify_upload-main-lg.csv'
+# Use a relative path and today's date for the final Shopify CSV file.
+shopify_output_filename = f"shopify-lg-main-{today_str}.csv"
 shopify_df.to_csv(shopify_output_filename, index=False)
 print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_output_filename}.")
 
@@ -354,16 +355,13 @@ def upload_to_gcs(source_file, destination_blob, bucket_name):
     :param destination_blob: Destination path (including folders) in the bucket.
     :param bucket_name: Name of the bucket.
     """
-    # Ensure the GOOGLE_APPLICATION_CREDENTIALS environment variable is set to your credentials file.
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob)
     blob.upload_from_filename(source_file)
     print(f"File {source_file} uploaded to {destination_blob} in bucket {bucket_name}.")
 
-# Set your GCS credentials file path if not already set in the environment.
-# Example: os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"D:\CODING\SHOPIFY INVENTORY TEST\gcs_credentials.json"
-
+# Assume GOOGLE_APPLICATION_CREDENTIALS is set (e.g., via GitHub Actions secrets)
 bucket_name = "sitemaps.leeladiamond.com"
-destination_blob = "shopify final/shopify_upload-main-lg.csv"
+destination_blob = f"shopify final/{shopify_output_filename}"
 upload_to_gcs(shopify_output_filename, destination_blob, bucket_name)

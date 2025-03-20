@@ -112,7 +112,7 @@ df.columns = [col.strip().lower() for col in df.columns]
 print("Normalized columns:", df.columns.tolist())
 
 # Filter rows:
-#   • lab must be "IGI" or "GIA" (using correct column 'lab')
+#   • lab must be "IGI" or "GIA" (using the correct column 'lab')
 #   • col (color) must be one of D, E, or F
 #   • Both image and video columns must be nonempty.
 df = df[df['lab'].isin(['IGI', 'GIA'])]
@@ -194,7 +194,7 @@ final_df['stock id'] = final_df['stock id'].apply(lambda x: f"NVL-{today_str}-{x
 
 # Rename columns for Shopify formatting.
 final_df.rename(columns={
-    'lab': 'LAB',  # Using the 'lab' column since it exists in your CSV.
+    'lab': 'LAB',  # Using the 'lab' column as it exists in your CSV.
     'reportno': 'REPORT NO',
     'FinalShape': 'Shape',
     'carats': 'Carat',

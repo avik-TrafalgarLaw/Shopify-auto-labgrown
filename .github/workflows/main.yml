@@ -22,9 +22,11 @@ jobs:
         run: |
           pip install pandas numpy requests google-cloud-storage
 
-      - name: Write GCP credentials file
+      - name: Set up Google Cloud Credentials
+        env:
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
         run: |
-          printf '%s' "${{ secrets.GCP_CREDENTIALS }}" > gcs_credentials.json
+          echo "$GCP_CREDENTIALS" > /tmp/gcp_credentials.json
 
       - name: Run processing script and upload file
         run: |

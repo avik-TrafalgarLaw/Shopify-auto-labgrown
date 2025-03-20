@@ -10,13 +10,11 @@ from google.cloud import storage
 # FTP DOWNLOAD: Retrieve CSV from remote FTP server
 ##############################################
 
-# FTP credentials and file details.
 ftp_server = "ftp.nivoda.net"
 ftp_user = "leeladiamondscorporate@gmail.com"
 ftp_password = "r[Eu;9NB"
 remote_file = "Leela Diamond_labgrown.csv"
-# Use a relative path for the downloaded file:
-local_file = "Labgrown.csv"  
+local_file = "Labgrown.csv"  # Relative path
 
 try:
     with FTP(ftp_server) as ftp:
@@ -33,15 +31,7 @@ except Exception as e:
 # PART 1: DATA IMPORT, FILTERING & BALANCED SELECTION
 ##############################################
 
-# --- Helper Functions for Data Transformation ---
-
 def map_shape(row):
-    """
-    Map the raw shape (from column 'shape') into one of the 10 allowed shapes.
-    - For "SQ EMERALD" or "ASSCHER", return "Asscher".
-    - For "CUSHION" or "CUSHION BRILLIANT", return "Cushion".
-    - For allowed shapes (ROUND, OVAL, etc.), return the title-case string.
-    """
     raw_shape = str(row.get('shape', '')).strip().upper()
     try:
         float(row.get('length', 0))
@@ -58,7 +48,6 @@ def map_shape(row):
     return None
 
 def compute_ratio(row):
-    """Compute the ratio (length/width) from the row."""
     try:
         l = float(row.get('length', 0))
         w = float(row.get('width', 0))
@@ -69,14 +58,9 @@ def compute_ratio(row):
     return np.nan
 
 def compute_measurement(row):
-    """Return a measurement string in the format 'length x width - height'."""
     return f"{row.get('length', '')} x {row.get('width', '')} - {row.get('height', '')}"
 
 def valid_cut(row):
-    """
-    For Round diamonds only, validate the 'cut' rating.
-    Allowed values are 'EX', 'IDEAL', or 'EXCELLENT'. For non-Round shapes, return True.
-    """
     shape = str(row.get('FinalShape', '')).upper()
     if shape == 'ROUND':
         cut = str(row.get('cut', '')).strip().upper()
@@ -85,7 +69,6 @@ def valid_cut(row):
         return True
 
 def clarity_group(clarity_raw):
-    """Simplify clarity (e.g. "VVS2" or "VS2") to "VVS" or "VS"."""
     clarity_raw = str(clarity_raw).upper().strip()
     if clarity_raw.startswith("VVS"):
         return "VVS"
@@ -95,32 +78,24 @@ def clarity_group(clarity_raw):
         return None
 
 def clarity_matches(row_clarity, group_clarity):
-    """Return True if the diamond's simplified clarity matches the desired group."""
     grp = clarity_group(row_clarity)
     if group_clarity == 'VS-VVS':
         return grp in ['VVS', 'VS']
     else:
         return grp == group_clarity
 
-# --- Import & Normalize Raw Data ---
-
 df = pd.read_csv(local_file, sep=',', low_memory=False,
                  dtype={'floCol': str, 'canadamarkeligible': str})
 
-# Normalize column names (strip spaces and convert to lowercase)
 df.columns = [col.strip().lower() for col in df.columns]
 print("Normalized columns:", df.columns.tolist())
 
-# Filter rows:
-#   • lab must be "IGI" or "GIA" (using the correct column 'lab')
-#   • col (color) must be one of D, E, or F
-#   • Both image and video columns must be nonempty.
+# Using the correct column names (e.g., 'lab' not 'labtest')
 df = df[df['lab'].isin(['IGI', 'GIA'])]
 df = df[df['col'].isin(['D', 'E', 'F'])]
 df = df[df['image'].notnull() & (df['image'].astype(str).str.strip() != "")]
 df = df[df['video'].notnull() & (df['video'].astype(str).str.strip() != "")]
 
-# Map shapes and compute additional columns.
 df['FinalShape'] = df.apply(map_shape, axis=1)
 allowed_shapes = ['Round', 'Oval', 'Princess', 'Emerald', 'Asscher', 'Cushion', 'Marquise', 'Pear', 'Radiant', 'Heart']
 df = df[df['FinalShape'].isin(allowed_shapes)]
@@ -128,12 +103,9 @@ df['Ratio'] = df.apply(compute_ratio, axis=1)
 df['Measurement'] = df.apply(compute_measurement, axis=1)
 df['v360 link'] = df['reportno'].apply(lambda x: f"https://loupe360.com/diamond/{x}/video/500/500")
 
-# Apply quality filters: for polish and symmetry (for all shapes) and cut (only for Round).
 df = df[df.apply(valid_cut, axis=1)]
 df = df[df['pol'].astype(str).str.strip().str.upper().isin(['EX', 'EXCELLENT'])]
 df = df[df['symm'].astype(str).str.strip().str.upper().isin(['EX', 'EXCELLENT'])]
-
-# --- Balanced Selection by Shape & Carat/Clarity Groups ---
 
 groups = [
     {'min_carat': 0.95, 'max_carat': 1.10, 'clarity': 'VVS', 'count': 28},
@@ -187,14 +159,13 @@ for shape in allowed_shapes:
 final_df = pd.concat(final_selection).reset_index(drop=True)
 print(f"Balanced selection complete: {len(final_df)} diamonds selected.")
 
-# Add a stock id column (e.g., "NVL-YYYYMMDD-01")
 today_str = datetime.today().strftime("%Y%m%d")
 final_df['stock id'] = final_df.index + 1
 final_df['stock id'] = final_df['stock id'].apply(lambda x: f"NVL-{today_str}-{x:02d}")
 
 # Rename columns for Shopify formatting.
 final_df.rename(columns={
-    'lab': 'LAB',  # Using the 'lab' column as it exists in your CSV.
+    'lab': 'LAB',
     'reportno': 'REPORT NO',
     'FinalShape': 'Shape',
     'carats': 'Carat',
@@ -207,7 +178,6 @@ final_df.rename(columns={
     'flo': 'Fluor'
 }, inplace=True)
 
-# Write the transformed diamonds file using a relative path.
 selected_output_filename = "transformed_diamonds.csv"
 final_df.to_csv(selected_output_filename, index=False)
 print(f"Selected diamonds file written with {len(final_df)} diamonds at {selected_output_filename}.")
@@ -224,7 +194,7 @@ def get_usd_to_cad_rate():
         return data["conversion_rates"]["CAD"]
     except Exception as e:
         print("Error fetching exchange rate:", e)
-        return 1.0  # fallback
+        return 1.0
 
 usd_to_cad_rate = get_usd_to_cad_rate()
 print(f"USD to CAD rate: {usd_to_cad_rate}")
@@ -339,7 +309,6 @@ shopify_df = pd.DataFrame({
     "Included / United States": "TRUE"
 })
 
-# Use a relative path and today's date for the final Shopify CSV file.
 shopify_output_filename = f"shopify-lg-main-{today_str}.csv"
 shopify_df.to_csv(shopify_output_filename, index=False)
 print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_output_filename}.")
@@ -349,19 +318,12 @@ print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_
 ##############################################
 
 def upload_to_gcs(source_file, destination_blob, bucket_name):
-    """
-    Uploads a file to the specified Google Cloud Storage bucket.
-    :param source_file: Path to the local file.
-    :param destination_blob: Destination path (including folders) in the bucket.
-    :param bucket_name: Name of the bucket.
-    """
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob)
     blob.upload_from_filename(source_file)
     print(f"File {source_file} uploaded to {destination_blob} in bucket {bucket_name}.")
 
-# The bucket name and destination path (folder structure in the bucket)
 bucket_name = "sitemaps.leeladiamond.com"
 destination_blob = f"shopify final/{shopify_output_filename}"
 upload_to_gcs(shopify_output_filename, destination_blob, bucket_name)

@@ -27,7 +27,7 @@ try:
         print(f"Downloaded '{remote_file}' to '{local_file}'.")
 except Exception as e:
     print("Error downloading file from FTP:", e)
-    # Optionally, exit or fallback if the file isn't available.
+    exit(1)
 
 ##############################################
 # PART 1: DATA IMPORT, FILTERING & BALANCED SELECTION
@@ -105,17 +105,17 @@ def clarity_matches(row_clarity, group_clarity):
 # --- Import & Normalize Raw Data ---
 
 df = pd.read_csv(local_file, sep=',', low_memory=False,
-                 dtype={'floCol': str, 'canadaMarkEligible': str})
+                 dtype={'floCol': str, 'canadamarkeligible': str})
 
 # Normalize column names (strip spaces and convert to lowercase)
 df.columns = [col.strip().lower() for col in df.columns]
 print("Normalized columns:", df.columns.tolist())
 
 # Filter rows:
-#   • labtest must be "IGI" or "GIA"
+#   • lab must be "IGI" or "GIA" (using correct column 'lab')
 #   • col (color) must be one of D, E, or F
 #   • Both image and video columns must be nonempty.
-df = df[df['labtest'].isin(['IGI', 'GIA'])]
+df = df[df['lab'].isin(['IGI', 'GIA'])]
 df = df[df['col'].isin(['D', 'E', 'F'])]
 df = df[df['image'].notnull() & (df['image'].astype(str).str.strip() != "")]
 df = df[df['video'].notnull() & (df['video'].astype(str).str.strip() != "")]
@@ -194,7 +194,7 @@ final_df['stock id'] = final_df['stock id'].apply(lambda x: f"NVL-{today_str}-{x
 
 # Rename columns for Shopify formatting.
 final_df.rename(columns={
-    'labtest': 'LAB',
+    'lab': 'LAB',  # Using the 'lab' column since it exists in your CSV.
     'reportno': 'REPORT NO',
     'FinalShape': 'Shape',
     'carats': 'Carat',
@@ -361,7 +361,7 @@ def upload_to_gcs(source_file, destination_blob, bucket_name):
     blob.upload_from_filename(source_file)
     print(f"File {source_file} uploaded to {destination_blob} in bucket {bucket_name}.")
 
-# Assume GOOGLE_APPLICATION_CREDENTIALS is set (e.g., via GitHub Actions secrets)
+# The bucket name and destination path (folder structure in the bucket)
 bucket_name = "sitemaps.leeladiamond.com"
 destination_blob = f"shopify final/{shopify_output_filename}"
 upload_to_gcs(shopify_output_filename, destination_blob, bucket_name)

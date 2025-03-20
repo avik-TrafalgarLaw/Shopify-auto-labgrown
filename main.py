@@ -90,7 +90,7 @@ df = pd.read_csv(local_file, sep=',', low_memory=False,
 df.columns = [col.strip().lower() for col in df.columns]
 print("Normalized columns:", df.columns.tolist())
 
-# Using the correct column names (e.g., 'lab' not 'labtest')
+# Filtering using the correct column names
 df = df[df['lab'].isin(['IGI', 'GIA'])]
 df = df[df['col'].isin(['D', 'E', 'F'])]
 df = df[df['image'].notnull() & (df['image'].astype(str).str.strip() != "")]
@@ -163,7 +163,6 @@ today_str = datetime.today().strftime("%Y%m%d")
 final_df['stock id'] = final_df.index + 1
 final_df['stock id'] = final_df['stock id'].apply(lambda x: f"NVL-{today_str}-{x:02d}")
 
-# Rename columns for Shopify formatting.
 final_df.rename(columns={
     'lab': 'LAB',
     'reportno': 'REPORT NO',
@@ -318,7 +317,8 @@ print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_
 ##############################################
 
 def upload_to_gcs(source_file, destination_blob, bucket_name):
-    storage_client = storage.Client()
+    # Load credentials explicitly from the file at /tmp/gcp_credentials.json
+    storage_client = storage.Client.from_service_account_json("/tmp/gcp_credentials.json")
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(destination_blob)
     blob.upload_from_filename(source_file)

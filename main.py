@@ -308,21 +308,9 @@ shopify_df = pd.DataFrame({
     "Included / United States": "TRUE"
 })
 
-# 1) Write the dated Shopify file
 shopify_output_filename = f"shopify-lg-main-{today_str}.csv"
 shopify_df.to_csv(shopify_output_filename, index=False)
 print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_output_filename}.")
-
-# 2) Create a copy for the live file and modify the desired columns
-shopify_df_live = shopify_df.copy()
-# Ensure the live file's Tags column includes "live" (append if not already present)
-shopify_df_live["Tags"] = shopify_df_live["Tags"].apply(lambda t: t + ",live" if "live" not in t.lower() else t)
-# Overwrite the "Custom Collections" column for the live file
-shopify_df_live["Custom Collections"] = "Lab-Created Diamonds-Live2"
-
-live_filename = "shopifyldmain_live.csv"
-shopify_df_live.to_csv(live_filename, index=False)
-print(f"Live Shopify file created with modified Custom Collections and Tags at {live_filename}.")
 
 ##############################################
 # PART 3: UPLOAD TO GOOGLE CLOUD STORAGE
@@ -337,11 +325,5 @@ def upload_to_gcs(source_file, destination_blob, bucket_name):
     print(f"File {source_file} uploaded to {destination_blob} in bucket {bucket_name}.")
 
 bucket_name = "sitemaps.leeladiamond.com"
-
-# Upload the dated file
-destination_blob_dated = f"shopify final/{shopify_output_filename}"
-upload_to_gcs(shopify_output_filename, destination_blob_dated, bucket_name)
-
-# Upload the live file
-destination_blob_live = f"shopify final/{live_filename}"
-upload_to_gcs(live_filename, destination_blob_live, bucket_name)
+destination_blob = f"shopify final/{shopify_output_filename}"
+upload_to_gcs(shopify_output_filename, destination_blob, bucket_name)

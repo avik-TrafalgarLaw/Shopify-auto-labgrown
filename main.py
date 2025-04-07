@@ -202,14 +202,14 @@ def markup(x):
     cad = x * usd_to_cad_rate
     base = cad * 1.05 * 1.13
     additional = (
-        350 if cad <= 500 else
-        505 if cad <= 1000 else
-        700 if cad <= 1500 else
-        900 if cad <= 2000 else
-        2000 if cad <= 2500 else
-        1400 if cad <= 3000 else
-        1600 if cad <= 5000 else
-        1800 if cad <= 100000 else
+        250 if cad <= 500 else
+        405 if cad <= 1000 else
+        600 if cad <= 1500 else
+        800 if cad <= 2000 else
+        1000 if cad <= 2500 else
+        1200 if cad <= 3000 else
+        1300 if cad <= 5000 else
+        1600 if cad <= 100000 else
         0
     ) * 1.15
     return round(base + additional, 2)

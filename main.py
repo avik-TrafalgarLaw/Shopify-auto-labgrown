@@ -315,15 +315,14 @@ print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_
 
 # 2) Create a copy for the live file and modify the desired columns
 shopify_df_live = shopify_df.copy()
-
-# Append 'live' to Tags column (if needed)
-shopify_df_live["Tags"] = shopify_df_live["Tags"].apply(lambda t: t + ",live" if pd.notnull(t) else "live")
+# Ensure the live file's Tags column includes "live" (append if not already present)
+shopify_df_live["Tags"] = shopify_df_live["Tags"].apply(lambda t: t + ",live" if "live" not in t.lower() else t)
 # Overwrite the "Custom Collections" column for the live file
 shopify_df_live["Custom Collections"] = "Lab-Created Diamonds-Live2"
 
 live_filename = "shopifyldmain_live.csv"
 shopify_df_live.to_csv(live_filename, index=False)
-print(f"Live Shopify file created with modified Custom Collections at {live_filename}.")
+print(f"Live Shopify file created with modified Custom Collections and Tags at {live_filename}.")
 
 ##############################################
 # PART 3: UPLOAD TO GOOGLE CLOUD STORAGE

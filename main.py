@@ -202,14 +202,14 @@ def markup(x):
     cad = x * usd_to_cad_rate
     base = cad * 1.05 * 1.13
     additional = (
-        250 if cad <= 500 else
-        405 if cad <= 1000 else
-        600 if cad <= 1500 else
-        800 if cad <= 2000 else
-        1000 if cad <= 2500 else
-        1200 if cad <= 3000 else
-        1300 if cad <= 5000 else
-        1600 if cad <= 100000 else
+        350 if cad <= 500 else
+        505 if cad <= 1000 else
+        700 if cad <= 1500 else
+        900 if cad <= 2000 else
+        2000 if cad <= 2500 else
+        1400 if cad <= 3000 else
+        1600 if cad <= 5000 else
+        1800 if cad <= 100000 else
         0
     ) * 1.15
     return round(base + additional, 2)
@@ -308,9 +308,22 @@ shopify_df = pd.DataFrame({
     "Included / United States": "TRUE"
 })
 
+# 1) Write the dated Shopify file
 shopify_output_filename = f"shopify-lg-main-{today_str}.csv"
 shopify_df.to_csv(shopify_output_filename, index=False)
 print(f"Shopify upload file created with {len(shopify_df)} diamonds at {shopify_output_filename}.")
+
+# 2) Create a copy for the live file and modify the desired columns
+shopify_df_live = shopify_df.copy()
+
+# Append 'live' to Tags column (if needed)
+shopify_df_live["Tags"] = shopify_df_live["Tags"].apply(lambda t: t + ",live" if pd.notnull(t) else "live")
+# Overwrite the "Custom Collections" column for the live file
+shopify_df_live["Custom Collections"] = "Lab-Created Diamonds-Live2"
+
+live_filename = "shopifyldmain_live.csv"
+shopify_df_live.to_csv(live_filename, index=False)
+print(f"Live Shopify file created with modified Custom Collections at {live_filename}.")
 
 ##############################################
 # PART 3: UPLOAD TO GOOGLE CLOUD STORAGE
@@ -326,11 +339,10 @@ def upload_to_gcs(source_file, destination_blob, bucket_name):
 
 bucket_name = "sitemaps.leeladiamond.com"
 
-# Upload Shopify file with dated filename
+# Upload the dated file
 destination_blob_dated = f"shopify final/{shopify_output_filename}"
 upload_to_gcs(shopify_output_filename, destination_blob_dated, bucket_name)
 
-# Also upload the same file as the live version with a fixed name
-live_filename = "shopifyldmain_live.csv"
+# Upload the live file
 destination_blob_live = f"shopify final/{live_filename}"
-upload_to_gcs(shopify_output_filename, destination_blob_live, bucket_name)
+upload_to_gcs(live_filename, destination_blob_live, bucket_name)

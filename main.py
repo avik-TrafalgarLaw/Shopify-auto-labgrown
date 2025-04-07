@@ -325,5 +325,12 @@ def upload_to_gcs(source_file, destination_blob, bucket_name):
     print(f"File {source_file} uploaded to {destination_blob} in bucket {bucket_name}.")
 
 bucket_name = "sitemaps.leeladiamond.com"
-destination_blob = f"shopify final/{shopify_output_filename}"
-upload_to_gcs(shopify_output_filename, destination_blob, bucket_name)
+
+# Upload Shopify file with dated filename
+destination_blob_dated = f"shopify final/{shopify_output_filename}"
+upload_to_gcs(shopify_output_filename, destination_blob_dated, bucket_name)
+
+# Also upload the same file as the live version with a fixed name
+live_filename = "shopifyldmain_live.csv"
+destination_blob_live = f"shopify final/{live_filename}"
+upload_to_gcs(shopify_output_filename, destination_blob_live, bucket_name)

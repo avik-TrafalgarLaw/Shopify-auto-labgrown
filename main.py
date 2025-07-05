@@ -12,7 +12,7 @@ from google.cloud import storage
 
 ftp_server = "ftp.nivoda.net"
 ftp_user = "leeladiamondscorporate@gmail.com"
-ftp_password = "r[Eu;9NB"
+ftp_password = "1yH£lG4n0Mq"
 remote_file = "Leela Diamond_labgrown.csv"
 local_file = "Labgrown.csv"  # Relative path
 

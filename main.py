@@ -3,7 +3,7 @@ import numpy as np
 import requests
 from datetime import datetime
 import os
-from ftplib import FTP, error_perm
+from ftplib import FTP
 from google.cloud import storage
 
 ##############################################
@@ -11,32 +11,22 @@ from google.cloud import storage
 ##############################################
 
 ftp_server = "ftp.nivoda.net"
+ftp_port = 21
 ftp_user = "leeladiamondscorporate@gmail.com"
-ftp_password = "1yH£lG4n0Mq"
+ftp_password = "1yH\u00a3lG4n0Mq"
 remote_file = "Leela Diamond_labgrown.csv"
-local_file = "Labgrown.csv"  # Save as local file
+local_file = "Labgrown.csv"  # Relative path
 
 try:
     with FTP() as ftp:
-        print("Connecting to FTP...")
-        ftp.connect(ftp_server, 21, timeout=30)
+        ftp.connect(ftp_server, ftp_port)
         ftp.login(user=ftp_user, passwd=ftp_password)
-        ftp.set_pasv(True)  # Enable passive mode
-        print("FTP login successful.")
-        print("Listing files in root directory:")
-        print(ftp.nlst())  # Show all files in root
-
-        # Use exact filename or match from list
         with open(local_file, "wb") as f:
-            ftp.retrbinary(f'RETR {remote_file}', f.write)
+            ftp.retrbinary(f"RETR {remote_file}", f.write)
         print(f"Downloaded '{remote_file}' to '{local_file}'.")
-except error_perm as ep:
-    print("FTP permission error:", ep)
-    exit(1)
 except Exception as e:
-    print("General FTP error:", e)
+    print("Error downloading file from FTP:", e)
     exit(1)
-
 ##############################################
 # PART 1: DATA IMPORT, FILTERING & BALANCED SELECTION
 ##############################################

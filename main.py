@@ -3,7 +3,7 @@ import numpy as np
 import requests
 from datetime import datetime
 import os
-from ftplib import FTP
+from ftplib import FTP, error_perm
 from google.cloud import storage
 
 ##############################################
@@ -14,17 +14,27 @@ ftp_server = "ftp.nivoda.net"
 ftp_user = "leeladiamondscorporate@gmail.com"
 ftp_password = "1yH£lG4n0Mq"
 remote_file = "Leela Diamond_labgrown.csv"
-local_file = "Labgrown.csv"  # Relative path
+local_file = "Labgrown.csv"  # Save as local file
 
 try:
-    with FTP(ftp_server) as ftp:
+    with FTP() as ftp:
+        print("Connecting to FTP...")
+        ftp.connect(ftp_server, 21, timeout=30)
         ftp.login(user=ftp_user, passwd=ftp_password)
+        ftp.set_pasv(True)  # Enable passive mode
         print("FTP login successful.")
+        print("Listing files in root directory:")
+        print(ftp.nlst())  # Show all files in root
+
+        # Use exact filename or match from list
         with open(local_file, "wb") as f:
-            ftp.retrbinary("RETR " + remote_file, f.write)
+            ftp.retrbinary(f'RETR {remote_file}', f.write)
         print(f"Downloaded '{remote_file}' to '{local_file}'.")
+except error_perm as ep:
+    print("FTP permission error:", ep)
+    exit(1)
 except Exception as e:
-    print("Error downloading file from FTP:", e)
+    print("General FTP error:", e)
     exit(1)
 
 ##############################################
